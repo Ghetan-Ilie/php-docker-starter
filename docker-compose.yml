@@ -1,0 +1,38 @@
+services:
+  # 1. PHP + Apache Server (fișierele site-ului)
+  web:
+    build: .
+    container_name: php_apache_app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html:z
+    depends_on:
+      - mysql-latest
+
+  # 2. Baza de date MySQL (stocare persistentă)
+  mysql-latest:
+    image: mysql:latest
+    container_name: mysql-latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 3. CloudBeaver - manager de baze de date
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    ports:
+      - "8978:8978"
+    depends_on:
+      - mysql-latest
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+
+volumes:
+  db_data:
+  cloudbeaver_data:
