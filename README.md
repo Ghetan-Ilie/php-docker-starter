@@ -1,30 +1,31 @@
 # php-docker-starter
 
-Proiect de pornire pentru dezvoltare web cu **PHP**, **MySQL** și **CloudBeaver**, rulat complet în Docker. Se pornește cu o singură comandă și afișează o pagină de bun venit care confirmă că serverul funcționează și că baza de date este conectată.
+A starter project for web development with **PHP**, **MySQL** and **CloudBeaver**, running entirely in Docker. One command starts everything, and the welcome page confirms that the server works, the database is connected, and data can be saved and read.
 
-## Ce conține
+## What's inside
 
-- **PHP 8.3 + Apache**: serverul web, cu extensiile `mysqli` și `pdo_mysql`
-- **MySQL**: baza de date, cu date persistente într-un volum Docker
-- **CloudBeaver**: interfață web pentru administrarea bazei de date
-- **Pagină de bun venit** (`index.php`) cu test automat de conexiune la MySQL
+- **PHP 8.3 + Apache**: the web server, with the `mysqli` and `pdo_mysql` extensions
+- **MySQL**: the database, with data persisted in a Docker volume
+- **CloudBeaver**: a web interface for managing the database
+- **Welcome page** (`public/index.php`): connection check, a form to add messages (POST) and a list of saved messages
+- **Database schema** (`db/schema.sql`): creates the `messages` table and inserts sample data on first start
 
-## Cerințe
+## Requirements
 
-- Docker și Docker Compose
+- Docker and Docker Compose
 
-## Instalare și pornire
+## Installation and setup
 
-### 1. Clonează proiectul
+### 1. Clone the project
 
 ```bash
-git clone https://github.com/NUME_UTILIZATOR/php-docker-starter.git
+git clone https://github.com/YOUR_USERNAME/php-docker-starter.git
 cd php-docker-starter
 ```
 
-### 2. Creează fișierul `.env`
+### 2. Create your `.env` file
 
-Fișierul `.env` conține parolele tale și nu este urcat pe GitHub. În proiect există un șablon, `.env.example`, pe care îl copiezi:
+The `.env` file holds your passwords and is **not** uploaded to GitHub. The repository includes a template, `.env.example`, which you copy:
 
 **macOS / Linux:**
 ```bash
@@ -41,56 +42,77 @@ copy .env.example .env
 Copy-Item .env.example .env
 ```
 
-Apoi deschide `.env` într-un editor și înlocuiește valorile cu ale tale:
+Then open `.env` in an editor and replace the values with your own:
 
 ```env
-MYSQL_ROOT_PASSWORD=pune_aici_o_parola_sigura
+MYSQL_ROOT_PASSWORD=put_a_strong_password_here
 MYSQL_DATABASE=my_database
 ```
 
-### 3. Pornește containerele
+### 3. Start the containers
 
 ```bash
 docker compose up -d --build
 ```
 
-### 4. Deschide în browser
+### 4. Open it in your browser
 
-| Serviciu    | Adresă                |
+| Service     | URL                   |
 |-------------|-----------------------|
-| Site PHP    | http://localhost:8080 |
+| PHP website | http://localhost:8080 |
 | CloudBeaver | http://localhost:8978 |
 
-> La prima pornire MySQL are nevoie de câteva secunde. Dacă pagina arată că baza de date nu răspunde, reîncarc-o peste puțin timp.
+> On the first start MySQL needs a few seconds to initialize. The website waits for the database to be ready, so if the page does not load right away, wait a moment and refresh.
 
-## Conectare la baza de date din CloudBeaver
+## Connecting to the database in CloudBeaver
 
+- Driver: MySQL
 - Host: `mysql-latest`
 - Port: `3306`
-- Utilizator: `root`
-- Parolă: cea din fișierul `.env`
+- Database: `my_database` (or the value from your `.env`)
+- User: `root`
+- Password: the value from your `.env`
 
-## Oprire
+## Database
+
+The schema and sample data live in `db/schema.sql`. MySQL runs this file **only once**, when the database volume is created for the first time. If you change it later, or change the password in `.env`, reset the database (this deletes all saved data):
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+## Stopping the project
 
 ```bash
 docker compose down
 ```
 
-Pentru a șterge și datele bazei de date:
+To also delete the database data:
 
 ```bash
 docker compose down -v
 ```
 
-## Structură
+## Project structure
 
 ```
 .
-├── docker-compose.yml
-├── Dockerfile
-├── config.php
-├── index.php
-├── .env.example
+├── docker-compose.yml     # PHP + Apache, MySQL and CloudBeaver
+├── Dockerfile             # PHP image with MySQL extensions
+├── .env.example           # template for your .env file
 ├── .gitignore
-└── .dockerignore
+├── .dockerignore
+├── db/
+│   └── schema.sql         # table definition + sample data
+├── app/
+│   └── db.php             # PDO database connection and helpers
+└── public/
+    └── index.php          # welcome page (the only folder served by Apache)
 ```
+
+## Security notes
+
+- Never commit your `.env` file. It is listed in `.gitignore`.
+- Only the `public/` folder is served by Apache, so `.env`, `schema.sql` and the PHP helpers cannot be downloaded from the browser.
+- The database port `3306` is published for convenience during development. Remove the `ports` entry for MySQL in `docker-compose.yml` if you do not need external access.

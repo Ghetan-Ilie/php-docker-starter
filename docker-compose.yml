@@ -1,16 +1,23 @@
 services:
-  # 1. PHP + Apache Server (fișierele site-ului)
+  # 1. PHP + Apache (the website)
   web:
     build: .
     container_name: php_apache_app
     ports:
       - "8080:80"
     volumes:
-      - ./:/var/www/html:z
+      - ./public:/var/www/html:z   # public files only
+      - ./app:/var/www/app:z       # PHP code that must not be exposed in the browser
+    environment:
+      DB_HOST: mysql-latest
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: root
+      DB_PASS: ${MYSQL_ROOT_PASSWORD}
     depends_on:
-      - mysql-latest
+      mysql-latest:
+        condition: service_healthy
 
-  # 2. Baza de date MySQL (stocare persistentă)
+  # 2. MySQL (persistent data + initial schema)
   mysql-latest:
     image: mysql:latest
     container_name: mysql-latest
@@ -21,8 +28,15 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - db_data:/var/lib/mysql
+      # scripts in this folder run automatically the first time the database is created
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
-  # 3. CloudBeaver - manager de baze de date
+  # 3. CloudBeaver (database manager)
   cloudbeaver:
     image: dbeaver/cloudbeaver:latest
     container_name: cloudbeaver
